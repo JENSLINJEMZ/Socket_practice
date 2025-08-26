@@ -1,0 +1,1898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Quiz | Sudo Society CTF</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --neon-green: #00ff88;
+      --neon-pink: #ff00c8;
+      --neon-blue: #00ffff;
+      --neon-yellow: #ffff00;
+      --neon-orange: #ff8800;
+      --neon-purple: #9945ff;
+      --dark-bg: #0a0a0a;
+      --darker-bg: #050505;
+      --card-bg: rgba(20, 20, 20, 0.7);
+      --glow: 0 0 15px rgba(0, 255, 136, 0.5);
+      --glow-intense: 0 0 25px rgba(0, 255, 136, 0.9);
+      --danger-red: #ff0000;
+      --warning-orange: #ffc800;
+      --success-green: #00ff00;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Share Tech Mono', monospace;
+      background-color: var(--dark-bg);
+      color: #c0fccc;
+      overflow-x: hidden;
+      background-image:
+        radial-gradient(circle at 20% 30%, rgba(0, 255, 136, 0.05) 0%, transparent 25%),
+        radial-gradient(circle at 80% 70%, rgba(0, 200, 255, 0.05) 0%, transparent 25%);
+      min-height: 100vh;
+    }
+
+    /* === ANIMATIONS === */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes glowPulse {
+      0%, 100% {
+        box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+      }
+      50% {
+        box-shadow: 0 0 30px rgba(0, 255, 136, 0.8);
+      }
+    }
+
+    /* === LOADING SPINNER === */
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 10000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .loading-overlay.active {
+      display: flex;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid rgba(0, 255, 136, 0.2);
+      border-top-color: var(--neon-green);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* === TOAST NOTIFICATIONS === */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+    }
+
+    .toast {
+      background: var(--card-bg);
+      border: 1px solid var(--neon-green);
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      margin-bottom: 1rem;
+      min-width: 300px;
+      max-width: 400px;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      backdrop-filter: blur(10px);
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .toast.success {
+      border-color: var(--success-green);
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+    }
+
+    .toast.error {
+      border-color: var(--danger-red);
+      box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+    }
+
+    .toast.info {
+      border-color: var(--neon-blue);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+    }
+
+    /* === SCANLINE EFFECT === */
+    .scanline {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(to bottom, transparent, var(--neon-green), transparent);
+      animation: scan 4s linear infinite;
+      z-index: 1000;
+      pointer-events: none;
+      opacity: 0.3;
+    }
+
+    @keyframes scan {
+      0% { top: -2px; }
+      100% { top: 100%; }
+    }
+
+    /* === HEADER === */
+    header {
+      padding: 1rem 0;
+      border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+      background: rgba(10, 10, 10, 0.95);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      cursor: pointer;
+    }
+
+    .logo-img {
+      height: 40px;
+      filter: drop-shadow(0 0 8px var(--neon-green));
+    }
+
+    .logo-text {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      font-size: 1.5rem;
+      color: var(--neon-green);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-shadow: var(--glow);
+    }
+
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      cursor: pointer;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid var(--neon-green);
+      object-fit: cover;
+      box-shadow: var(--glow);
+    }
+
+    .username {
+      font-family: 'Orbitron', sans-serif;
+      color: var(--neon-green);
+      font-weight: 700;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .nav-links a {
+      color: #c0fccc;
+      text-decoration: none;
+      font-size: 0.9rem;
+      position: relative;
+      padding: 0.5rem 0;
+      transition: all 0.3s ease;
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--neon-green);
+      transition: width 0.3s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--neon-green);
+    }
+
+    .nav-links a:hover::after,
+    .nav-links a.active::after {
+      width: 100%;
+    }
+
+    .nav-links a.active {
+      color: var(--neon-green);
+      text-shadow: var(--glow);
+    }
+
+    /* === QUIZ HEADER === */
+    .quiz-hero {
+      text-align: center;
+      padding: 3rem 0;
+      position: relative;
+    }
+
+    .quiz-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 3rem;
+      color: var(--neon-green);
+      text-shadow: var(--glow-intense);
+      margin-bottom: 1rem;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .quiz-subtitle {
+      font-size: 1.2rem;
+      color: rgba(192, 252, 204, 0.8);
+      animation: fadeIn 0.7s ease-out;
+    }
+
+    /* === STATS SECTION === */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 3rem;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid rgba(0, 255, 136, 0.2);
+      border-radius: 8px;
+      padding: 1.5rem;
+      text-align: center;
+      backdrop-filter: blur(5px);
+      transition: all 0.3s ease;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+      border-color: var(--neon-green);
+    }
+
+    .stat-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .stat-value {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2rem;
+      color: var(--neon-green);
+      text-shadow: var(--glow);
+      margin-bottom: 0.3rem;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: rgba(192, 252, 204, 0.6);
+      text-transform: uppercase;
+    }
+
+    /* === DAILY QUIZ SECTION === */
+    .daily-quiz-container {
+      background: var(--card-bg);
+      border: 2px solid var(--neon-green);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 3rem;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+      animation: glowPulse 3s infinite;
+    }
+
+    .quiz-header {
+      background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 255, 255, 0.1));
+      padding: 2rem;
+      border-bottom: 1px solid rgba(0, 255, 136, 0.3);
+    }
+
+    .quiz-date {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .date-display {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.2rem;
+      color: var(--neon-yellow);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .quiz-timer {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      border: 1px solid rgba(0, 255, 136, 0.3);
+    }
+
+    .timer-value {
+      font-family: 'Orbitron', sans-serif;
+      color: var(--neon-orange);
+      font-size: 1.1rem;
+    }
+
+    .quiz-meta {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: rgba(192, 252, 204, 0.8);
+    }
+
+    .meta-icon {
+      color: var(--neon-blue);
+    }
+
+    .quiz-content {
+      padding: 2rem;
+    }
+
+    .question-number {
+      color: var(--neon-blue);
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+      letter-spacing: 2px;
+    }
+
+    .question-text {
+      font-size: 1.3rem;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+      color: var(--neon-green);
+      font-weight: 500;
+    }
+
+    .code-snippet {
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(0, 255, 136, 0.2);
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--neon-blue);
+      overflow-x: auto;
+    }
+
+    .options-container {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .option-card {
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid rgba(0, 255, 136, 0.2);
+      border-radius: 8px;
+      padding: 1.2rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .option-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.2), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .option-card:hover::before {
+      left: 100%;
+    }
+
+    .option-card:hover {
+      border-color: var(--neon-green);
+      transform: translateX(5px);
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+    }
+
+    .option-card.selected {
+      background: rgba(0, 255, 136, 0.1);
+      border-color: var(--neon-green);
+      box-shadow: 0 0 25px rgba(0, 255, 136, 0.5);
+    }
+
+    .option-card.correct {
+      background: rgba(0, 255, 0, 0.1);
+      border-color: var(--success-green);
+      box-shadow: 0 0 25px rgba(0, 255, 0, 0.5);
+    }
+
+    .option-card.incorrect {
+      background: rgba(255, 0, 0, 0.1);
+      border-color: var(--danger-red);
+      box-shadow: 0 0 25px rgba(255, 0, 0, 0.5);
+    }
+
+    .option-card.disabled {
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    .option-letter {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(0, 255, 136, 0.1);
+      border: 2px solid rgba(0, 255, 136, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: bold;
+      color: var(--neon-green);
+      font-size: 1.2rem;
+      transition: all 0.3s ease;
+    }
+
+    .option-card.selected .option-letter {
+      background: var(--neon-green);
+      color: var(--dark-bg);
+    }
+
+    .option-card.correct .option-letter {
+      background: var(--success-green);
+      color: var(--dark-bg);
+    }
+
+    .option-card.incorrect .option-letter {
+      background: var(--danger-red);
+      color: white;
+    }
+
+    .option-text {
+      flex: 1;
+      font-size: 1.1rem;
+    }
+
+    .option-feedback {
+      margin-left: auto;
+      display: none;
+      font-size: 1.5rem;
+    }
+
+    .option-card.correct .option-feedback,
+    .option-card.incorrect .option-feedback {
+      display: block;
+    }
+
+    /* === QUIZ ACTIONS === */
+    .quiz-actions {
+      padding: 2rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-top: 1px solid rgba(0, 255, 136, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .submit-btn {
+      padding: 1rem 2.5rem;
+      background: linear-gradient(45deg, var(--neon-green), var(--neon-blue));
+      border: none;
+      border-radius: 8px;
+      color: var(--darker-bg);
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .submit-btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .submit-btn:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(0, 255, 136, 0.5);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .hint-btn {
+      padding: 0.8rem 1.5rem;
+      background: rgba(255, 200, 0, 0.1);
+      border: 1px solid var(--warning-orange);
+      border-radius: 8px;
+      color: var(--warning-orange);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .hint-btn:hover {
+      background: rgba(255, 200, 0, 0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(255, 200, 0, 0.3);
+    }
+
+    /* === EXPLANATION SECTION === */
+    .explanation-section {
+      margin-top: 2rem;
+      padding: 2rem;
+      background: rgba(0, 255, 136, 0.05);
+      border: 1px solid rgba(0, 255, 136, 0.2);
+      border-radius: 8px;
+      display: none;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .explanation-section.show {
+      display: block;
+    }
+
+    .explanation-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .explanation-icon {
+      font-size: 1.5rem;
+    }
+
+    .explanation-title {
+      font-family: 'Orbitron', sans-serif;
+      color: var(--neon-green);
+      font-size: 1.2rem;
+    }
+
+    .explanation-content {
+      color: rgba(192, 252, 204, 0.9);
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    .related-topics {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .topic-tag {
+      padding: 0.3rem 0.8rem;
+      background: rgba(0, 255, 255, 0.1);
+      border: 1px solid rgba(0, 255, 255, 0.3);
+      border-radius: 15px;
+      color: var(--neon-blue);
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+    }
+
+    .topic-tag:hover {
+      background: rgba(0, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+
+    /* === QUIZ HISTORY === */
+    .history-section {
+      margin-top: 3rem;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .section-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2rem;
+      color: var(--neon-blue);
+      text-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 0.5rem;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 0.3rem;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 255, 136, 0.2);
+    }
+
+    .filter-tab {
+      padding: 0.6rem 1.2rem;
+      background: transparent;
+      border: none;
+      color: rgba(192, 252, 204, 0.7);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+
+    .filter-tab:hover {
+      color: var(--neon-green);
+      background: rgba(0, 255, 136, 0.1);
+    }
+
+    .filter-tab.active {
+      background: rgba(0, 255, 136, 0.2);
+      color: var(--neon-green);
+    }
+
+    .quiz-history-grid {
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .history-card {
+      background: var(--card-bg);
+      border: 1px solid rgba(0, 255, 136, 0.2);
+      border-radius: 8px;
+      padding: 1.5rem;
+      backdrop-filter: blur(5px);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .history-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+
+    .history-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+    }
+
+    .history-card:hover::after {
+      transform: scaleX(1);
+    }
+
+    .history-date {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .date-text {
+      color: var(--neon-yellow);
+      font-size: 0.9rem;
+    }
+
+    .completion-badge {
+      padding: 0.3rem 0.8rem;
+      border-radius: 15px;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+
+    .completion-badge.completed {
+      background: rgba(0, 255, 0, 0.1);
+      color: var(--success-green);
+      border: 1px solid var(--success-green);
+    }
+
+    .completion-badge.missed {
+      background: rgba(255, 0, 0, 0.1);
+      color: var(--danger-red);
+      border: 1px solid var(--danger-red);
+    }
+
+    .history-question {
+      color: rgba(192, 252, 204, 0.9);
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+
+    .history-stats {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+
+    .history-stat {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      color: rgba(192, 252, 204, 0.6);
+      font-size: 0.9rem;
+    }
+
+    /* === LEADERBOARD SECTION === */
+    .leaderboard-preview {
+      background: var(--card-bg);
+      border: 1px solid rgba(0, 255, 136, 0.2);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-top: 3rem;
+      backdrop-filter: blur(5px);
+    }
+
+    .leaderboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .leaderboard-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.5rem;
+      color: var(--neon-purple);
+      text-shadow: 0 0 15px rgba(153, 69, 255, 0.5);
+    }
+
+    .view-all-btn {
+      padding: 0.5rem 1rem;
+      background: rgba(153, 69, 255, 0.1);
+      border: 1px solid var(--neon-purple);
+      border-radius: 8px;
+      color: var(--neon-purple);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+    }
+
+    .view-all-btn:hover {
+      background: rgba(153, 69, 255, 0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(153, 69, 255, 0.3);
+    }
+
+    .leaderboard-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .leaderboard-item {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .leaderboard-item:hover {
+      background: rgba(0, 0, 0, 0.5);
+      transform: translateX(5px);
+    }
+
+    .leaderboard-item.current-user {
+      border: 1px solid var(--neon-green);
+      background: rgba(0, 255, 136, 0.05);
+    }
+
+    .rank-number {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.2rem;
+      width: 40px;
+      text-align: center;
+      color: var(--neon-yellow);
+      font-weight: bold;
+    }
+
+    .rank-number.gold {
+      color: #FFD700;
+      text-shadow: 0 0 10px #FFD700;
+    }
+
+    .rank-number.silver {
+      color: #C0C0C0;
+      text-shadow: 0 0 10px #C0C0C0;
+    }
+
+    .rank-number.bronze {
+      color: #CD7F32;
+      text-shadow: 0 0 10px #CD7F32;
+    }
+
+    .player-info {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-left: 1rem;
+    }
+
+    .player-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid rgba(0, 255, 136, 0.5);
+    }
+
+    .player-name {
+      color: var(--neon-green);
+      font-weight: 500;
+    }
+
+    .player-score {
+      color: rgba(192, 252, 204, 0.8);
+      font-size: 0.9rem;
+      text-align: right;
+    }
+
+    .score-value {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.1rem;
+      color: var(--neon-green);
+    }
+
+    /* === FOOTER === */
+    footer {
+      padding: 2rem 0;
+      background: rgba(5, 5, 5, 0.95);
+      border-top: 1px solid rgba(0, 255, 136, 0.2);
+      text-align: center;
+      margin-top: 3rem;
+    }
+
+    .copyright {
+      color: rgba(192, 252, 204, 0.6);
+      font-size: 0.9rem;
+    }
+
+    /* === RESPONSIVE === */
+    @media (max-width: 768px) {
+      .header-content {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .quiz-title {
+        font-size: 2rem;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .quiz-meta {
+        gap: 1rem;
+      }
+
+      .option-card {
+        padding: 1rem;
+      }
+
+      .quiz-actions {
+        justify-content: center;
+      }
+
+      .section-header {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .nav-links {
+        display: none;
+      }
+    }
+
+    /* === MODAL === */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 10000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--card-bg);
+      border: 2px solid var(--neon-green);
+      border-radius: 12px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 0 40px rgba(0, 255, 136, 0.5);
+      backdrop-filter: blur(10px);
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .modal-header {
+      padding: 2rem;
+      background: rgba(0, 0, 0, 0.5);
+      border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+      position: relative;
+    }
+
+    .modal-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.5rem;
+      color: var(--neon-green);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      color: var(--neon-green);
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .modal-close:hover {
+      transform: rotate(90deg);
+      color: var(--neon-pink);
+    }
+
+    .modal-body {
+      padding: 2rem;
+    }
+
+    /* === CONFETTI ANIMATION === */
+    .confetti {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      background: var(--neon-green);
+      position: absolute;
+      animation: confetti-fall 3s linear forwards;
+    }
+
+    @keyframes confetti-fall {
+      to {
+        transform: translateY(100vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="scanline"></div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <header>
+    <div class="container">
+      <div class="header-content">
+        <div class="logo" onclick="window.location.href='index.html'">
+          <img src="sudo_society.png" alt="Sudo Society Logo" class="logo-img">
+          <span class="logo-text">Sudo Society</span>
+        </div>
+        <div class="user-menu">
+          <nav class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="challenges.html">Challenges</a>
+            <a href="leaderboard.html">Leaderboard</a>
+            <a href="quiz.html" class="active">Daily Quiz</a>
+            <a href="settings.html">Settings</a>
+            <a href="billing-history.html">Billing</a>
+            <a href="reward-place.html">Rewards</a>
+            <a href="lab-place.html">Labs</a>
+          </nav>
+          <div class="user-profile">
+            <img src="https://i.imgur.com/JqYeSzn.png" alt="User Avatar" class="user-avatar">
+            <span class="username">hacker1337</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Quiz Hero Section -->
+    <section class="quiz-hero">
+      <h1 class="quiz-title">🧠 Daily Cybersecurity Quiz</h1>
+      <p class="quiz-subtitle">Test your knowledge and earn rewards every day!</p>
+    </section>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-icon">🔥</span>
+        <div class="stat-value" id="currentStreak">0</div>
+        <div class="stat-label">Day Streak</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">🎯</span>
+        <div class="stat-value" id="totalCorrect">0</div>
+        <div class="stat-label">Total Correct</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">🏆</span>
+        <div class="stat-value" id="totalPoints">0</div>
+        <div class="stat-label">Quiz Points</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">📊</span>
+        <div class="stat-value" id="accuracy">0%</div>
+        <div class="stat-label">Accuracy</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">⭐</span>
+        <div class="stat-value" id="globalRank">Unranked</div>
+        <div class="stat-label">Quiz Rank</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">🎖️</span>
+        <div class="stat-value" id="achievements">0</div>
+        <div class="stat-label">Achievements</div>
+      </div>
+    </div>
+
+    <!-- Daily Quiz Container -->
+    <div class="daily-quiz-container" id="dailyQuiz">
+      <div class="quiz-header">
+        <div class="quiz-date">
+                    <div class="date-display">
+            📅 <span id="currentDate"></span>
+          </div>
+          <div class="quiz-timer">
+            <span>⏱️</span>
+            <span class="timer-value" id="timerValue">23:45:30</span>
+          </div>
+        </div>
+        <div class="quiz-meta">
+          <div class="meta-item">
+            <span class="meta-icon">📚</span>
+            <span>Category: <strong id="quizCategory">Loading...</strong></span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-icon">💎</span>
+            <span>Reward: <strong>50 Points</strong></span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-icon">👥</span>
+            <span><strong id="participantsCount">0</strong> participants today</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="quiz-content">
+        <div class="question-number">Question of the Day</div>
+        <h2 class="question-text" id="questionText">
+          Loading question...
+        </h2>
+
+        <div class="code-snippet" id="codeSnippet" style="display: none;">
+          <pre><code id="codeContent"></code></pre>
+        </div>
+
+        <div class="options-container" id="optionsContainer">
+          <!-- Options will be loaded dynamically -->
+        </div>
+
+        <div class="explanation-section" id="explanationSection">
+          <div class="explanation-header">
+            <span class="explanation-icon">💡</span>
+            <h3 class="explanation-title">Explanation</h3>
+          </div>
+          <div class="explanation-content" id="explanationContent">
+            <!-- Explanation will be loaded here -->
+          </div>
+          <div class="related-topics">
+            <!-- Topics will be loaded here -->
+          </div>
+        </div>
+      </div>
+
+      <div class="quiz-actions">
+        <button class="hint-btn" onclick="showHint()">
+          💡 Use Hint (-10 points)
+        </button>
+        <button class="submit-btn" id="submitBtn" onclick="submitAnswer()" disabled>
+          Submit Answer
+        </button>
+      </div>
+    </div>
+
+    <!-- Quiz History Section -->
+    <section class="history-section">
+      <div class="section-header">
+        <h2 class="section-title">📚 Previous Quizzes</h2>
+        <div class="filter-tabs">
+          <button class="filter-tab active" onclick="filterHistory('all')">All</button>
+          <button class="filter-tab" onclick="filterHistory('completed')">Completed</button>
+          <button class="filter-tab" onclick="filterHistory('missed')">Missed</button>
+          <button class="filter-tab" onclick="filterHistory('perfect')">Perfect Score</button>
+        </div>
+      </div>
+
+      <div class="quiz-history-grid" id="historyGrid">
+        <!-- History cards will be dynamically loaded here -->
+      </div>
+    </section>
+
+    <!-- Leaderboard Preview -->
+    <section class="leaderboard-preview">
+      <div class="leaderboard-header">
+        <h2 class="leaderboard-title">🏆 Today's Top Performers</h2>
+        <a href="leaderboard.html" class="view-all-btn">View Full Leaderboard →</a>
+      </div>
+      <div class="leaderboard-list" id="leaderboardList">
+        <!-- Leaderboard items will be dynamically loaded -->
+      </div>
+    </section>
+  </main>
+
+  <!-- Quiz Modal for Past Quizzes -->
+  <div class="modal" id="quizModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalTitle">Quiz Details</h2>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- Modal content will be dynamically loaded -->
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p class="copyright">&copy; 2025 Sudo Society CTF. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    // === GLOBAL VARIABLES ===
+    let currentQuiz = null;
+    let selectedOption = null;
+    let quizCompleted = false;
+    let userStats = null;
+    let quizStartTime = null;
+
+    // === API CONFIGURATION ===
+    const API_BASE = 'api/quiz.php';
+
+    // === INITIALIZATION ===
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeQuiz();
+        updateDateTime();
+        setupEventListeners();
+        loadUserStats();
+        loadQuizHistory();
+        loadLeaderboard();
+    });
+
+    function setupEventListeners() {
+        // Modal events
+        document.getElementById('quizModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+            
+            if (!quizCompleted && e.key >= '1' && e.key <= '4') {
+                const optionIndex = parseInt(e.key) - 1;
+                const options = document.querySelectorAll('.option-card');
+                if (options[optionIndex]) {
+                    options[optionIndex].click();
+                }
+            }
+            
+            if (e.key === 'Enter' && selectedOption && !quizCompleted) {
+                submitAnswer();
+            }
+        });
+    }
+
+    // === QUIZ FUNCTIONS ===
+    async function initializeQuiz() {
+        try {
+            showLoading();
+            const response = await fetch(`${API_BASE}?action=daily`);
+            
+            if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                throw new Error('Failed to load quiz');
+            }
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                showToast(data.error, 'error');
+                document.getElementById('questionText').textContent = 'No quiz available for today. Please check back tomorrow!';
+                return;
+            }
+            
+            currentQuiz = data.quiz;
+            quizStartTime = new Date();
+            
+            if (currentQuiz.completed) {
+                quizCompleted = true;
+                showCompletedQuiz(currentQuiz);
+            } else {
+                displayQuiz(currentQuiz);
+            }
+            
+            updateCountdown(currentQuiz.time_remaining);
+            
+        } catch (error) {
+            console.error('Error loading quiz:', error);
+            showToast('Failed to load quiz. Please try refreshing the page.', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function displayQuiz(quiz) {
+        document.getElementById('quizCategory').textContent = quiz.category;
+        document.getElementById('questionText').textContent = quiz.question;
+        document.getElementById('participantsCount').textContent = quiz.participants;
+        
+        if (quiz.code_snippet) {
+            document.getElementById('codeSnippet').style.display = 'block';
+            document.getElementById('codeContent').textContent = quiz.code_snippet;
+        } else {
+            document.getElementById('codeSnippet').style.display = 'none';
+        }
+        
+        const optionsContainer = document.getElementById('optionsContainer');
+        optionsContainer.innerHTML = quiz.options.map(option => `
+            <div class="option-card" onclick="selectOption(this, '${option.option_letter}')">
+                <div class="option-letter">${option.option_letter}</div>
+                <div class="option-text">${option.option_text}</div>
+                <div class="option-feedback"></div>
+            </div>
+        `).join('');
+    }
+
+    function selectOption(element, letter) {
+        if (quizCompleted) return;
+        
+        document.querySelectorAll('.option-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        
+        element.classList.add('selected');
+        selectedOption = letter;
+        document.getElementById('submitBtn').disabled = false;
+    }
+
+    async function submitAnswer() {
+        if (!selectedOption || quizCompleted) return;
+        
+        const timeTaken = Math.floor((new Date() - quizStartTime) / 1000);
+        
+        try {
+            showLoading();
+            
+            const response = await fetch(`${API_BASE}?action=submit`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    question_id: currentQuiz.id,
+                    selected_answer: selectedOption,
+                    time_taken: timeTaken
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                showToast(data.error, 'error');
+                return;
+            }
+            
+            quizCompleted = true;
+            
+            // Update UI
+            document.querySelectorAll('.option-card').forEach(card => {
+                card.classList.add('disabled');
+                const letter = card.querySelector('.option-letter').textContent;
+                const feedback = card.querySelector('.option-feedback');
+                
+                if (letter === data.correct_answer) {
+                    card.classList.add('correct');
+                    feedback.innerHTML = '✓';
+                } else if (letter === selectedOption && !data.is_correct) {
+                    card.classList.add('incorrect');
+                    feedback.innerHTML = '✗';
+                }
+            });
+            
+            // Show explanation
+            const explanationSection = document.getElementById('explanationSection');
+            document.getElementById('explanationContent').textContent = data.explanation;
+            
+            const topicsHtml = data.topics.map(topic => 
+                `<span class="topic-tag">#${topic}</span>`
+            ).join('');
+            explanationSection.querySelector('.related-topics').innerHTML = topicsHtml;
+            
+            explanationSection.classList.add('show');
+            
+            // Show result
+            if (data.is_correct) {
+                let message = `🎉 Correct! +${data.points_earned} points`;
+                if (data.speed_bonus) {
+                    message += ' (Speed bonus!)';
+                }
+                showToast(message, 'success');
+                triggerConfetti();
+            } else {
+                showToast('❌ Incorrect. Better luck tomorrow!', 'error');
+            }
+            
+            // Handle achievements
+            if (data.new_achievements && data.new_achievements.length > 0) {
+                data.new_achievements.forEach(achievement => {
+                    unlockAchievement(achievement);
+                });
+            }
+            
+            document.getElementById('submitBtn').textContent = 'Quiz Completed';
+            document.getElementById('submitBtn').disabled = true;
+            
+            // Refresh stats and history
+            loadUserStats();
+            loadQuizHistory();
+            
+        } catch (error) {
+            console.error('Error submitting answer:', error);
+            showToast('Failed to submit answer', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async function showHint() {
+        if (quizCompleted) return;
+        
+        if (!confirm('Using a hint will deduct 10 points. Continue?')) {
+            return;
+        }
+        
+        try {
+            showLoading();
+            
+            const response = await fetch(`${API_BASE}?action=hint`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    question_id: currentQuiz.id
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                showToast(data.error, 'error');
+                return;
+            }
+            
+            showToast(`💡 Hint: ${data.hint}`, 'info');
+            
+        } catch (error) {
+            console.error('Error getting hint:', error);
+            showToast('Failed to get hint', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function showCompletedQuiz(quiz) {
+        displayQuiz(quiz);
+        
+        document.querySelectorAll('.option-card').forEach(card => {
+            card.classList.add('disabled');
+            const letter = card.querySelector('.option-letter').textContent;
+            const feedback = card.querySelector('.option-feedback');
+            
+            if (letter === quiz.correct_answer) {
+                card.classList.add('correct');
+                feedback.innerHTML = '✓';
+            } else if (letter === quiz.user_answer && !quiz.is_correct) {
+                card.classList.add('incorrect');
+                feedback.innerHTML = '✗';
+            }
+            
+            if (letter === quiz.user_answer) {
+                card.classList.add('selected');
+            }
+        });
+        
+        const explanationSection = document.getElementById('explanationSection');
+        document.getElementById('explanationContent').textContent = quiz.explanation;
+        
+        const topicsHtml = quiz.topics.map(topic => 
+            `<span class="topic-tag">#${topic}</span>`
+        ).join('');
+        explanationSection.querySelector('.related-topics').innerHTML = topicsHtml;
+        
+        explanationSection.classList.add('show');
+        
+        document.getElementById('submitBtn').textContent = 'Already Completed';
+        document.getElementById('submitBtn').disabled = true;
+    }
+
+    // === STATS FUNCTIONS ===
+    async function loadUserStats() {
+        try {
+            const response = await fetch(`${API_BASE}?action=stats`);
+            const data = await response.json();
+            
+            if (data.success) {
+                userStats = data.stats;
+                updateStatsDisplay(data.stats);
+            }
+        } catch (error) {
+            console.error('Error loading stats:', error);
+        }
+    }
+
+    function updateStatsDisplay(stats) {
+        animateValue('currentStreak', 0, stats.current_streak || 0, 1000);
+        animateValue('totalCorrect', 0, stats.total_correct || 0, 1200);
+        animateValue('totalPoints', 0, stats.total_points || 0, 1500);
+        document.getElementById('accuracy').textContent = `${stats.accuracy || 0}%`;
+        document.getElementById('globalRank').textContent = stats.rank_position ? `#${stats.rank_position}` : 'Unranked';
+        animateValue('achievements', 0, stats.achievements_count || 0, 1000);
+    }
+
+    // === HISTORY FUNCTIONS ===
+    async function loadQuizHistory(filter = 'all') {
+        try {
+            const response = await fetch(`${API_BASE}?action=history&filter=${filter}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                displayQuizHistory(data.history);
+            }
+        } catch (error) {
+            console.error('Error loading history:', error);
+        }
+    }
+
+    function displayQuizHistory(history) {
+        const historyGrid = document.getElementById('historyGrid');
+        
+        if (history.length === 0) {
+            historyGrid.innerHTML = '<p style="text-align: center; color: rgba(192, 252, 204, 0.6);">No quiz history available</p>';
+            return;
+        }
+        
+        historyGrid.innerHTML = history.map(quiz => {
+            const isCompleted = quiz.completed;
+            const isCorrect = quiz.is_correct;
+            
+            return `
+                <div class="history-card" onclick='viewQuizDetails(${JSON.stringify(quiz).replace(/'/g, "&apos;")})'>
+                    <div class="history-date">
+                        <span class="date-text">${formatDate(quiz.date)}</span>
+                        <span class="completion-badge ${isCompleted ? 'completed' : 'missed'}">
+                            ${isCompleted ? 'Completed' : 'Missed'}
+                        </span>
+                    </div>
+                    <p class="history-question">${quiz.question}</p>
+                    <div class="history-stats">
+                        <span class="history-stat">
+                            <span>📚</span> ${quiz.category}
+                        </span>
+                        <span class="history-stat">
+                            <span>💎</span> ${quiz.points} points
+                        </span>
+                        ${isCompleted ? `
+                            <span class="history-stat">
+                                <span>${isCorrect ? '✅' : '❌'}</span> 
+                                ${isCorrect ? 'Correct' : 'Incorrect'}
+                            </span>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function filterHistory(filter) {
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        loadQuizHistory(filter);
+    }
+
+    function viewQuizDetails(quiz) {
+        const modalBody = document.getElementById('modalBody');
+        modalBody.innerHTML = `
+            <div class="quiz-details">
+                <h3>Question</h3>
+                <p style="font-size: 1.1rem; margin-bottom: 1.5rem;">${quiz.question}</p>
+                
+                ${quiz.code_snippet ? `
+                    <div class="code-snippet">
+                        <pre><code>${quiz.code_snippet}</code></pre>
+                    </div>
+                ` : ''}
+                
+                <h3>Options</h3>
+                <div class="options-container">
+                    ${quiz.options.map(option => `
+                        <div class="option-card ${
+                            option.option_letter === quiz.correct_answer ? 'correct' : ''
+                        } ${
+                            quiz.user_answer && option.option_letter === quiz.user_answer && option.option_letter !== quiz.correct_answer ? 'incorrect' : ''
+                        } disabled">
+                            <div class="option-letter">${option.option_letter}</div>
+                            <div class="option-text">${option.option_text}</div>
+                            <div class="option-feedback">${option.option_letter === quiz.correct_answer ? '✓' : '✗'}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="explanation-section show" style="margin-top: 2rem;">
+                    <div class="explanation-header">
+                        <span class="explanation-icon">💡</span>
+                        <h3 class="explanation-title">Explanation</h3>
+                    </div>
+                    <div class="explanation-content">${quiz.explanation}</div>
+                    <div class="related-topics">
+                        ${quiz.topics.map(topic => `<span class="topic-tag">#${topic}</span>`).join('')}
+                    </div>
+                </div>
+                
+                ${quiz.completed ? `
+                    <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(0, 255, 136, 0.1); border-radius: 8px;">
+                        <p>Your answer: <strong>${quiz.user_answer}</strong></p>
+                        <p>Result: <strong>${quiz.is_correct ? 'Correct ✅' : 'Incorrect ❌'}</strong></p>
+                        <p>Points earned: <strong>${quiz.points_earned || 0}</strong></p>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+        
+        document.getElementById('modalTitle').textContent = `Quiz - ${formatDate(quiz.date)}`;
+        document.getElementById('quizModal').classList.add('active');
+    }
+
+    // === LEADERBOARD FUNCTIONS ===
+    async function loadLeaderboard() {
+        try {
+            const response = await fetch(`${API_BASE}?action=leaderboard&limit=5`);
+            const data = await response.json();
+            
+            if (data.success) {
+                displayLeaderboard(data.leaderboard);
+            }
+        } catch (error) {
+            console.error('Error loading leaderboard:', error);
+        }
+    }
+
+    function displayLeaderboard(leaderboard) {
+        const leaderboardList = document.getElementById('leaderboardList');
+        
+        if (leaderboard.length === 0) {
+            leaderboardList.innerHTML = '<p style="text-align: center; color: rgba(192, 252, 204, 0.6);">No leaderboard data available</p>';
+            return;
+        }
+        
+        leaderboardList.innerHTML = leaderboard.map((player, index) => {
+            const rank = index + 1;
+            const rankClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
+            
+            return `
+                <div class="leaderboard-item ${player.is_current_user ? 'current-user' : ''}">
+                    <span class="rank-number ${rankClass}">#${rank}</span>
+                    <div class="player-info">
+                        <img src="${player.avatar || 'https://i.pravatar.cc/150?img=' + player.user_id}" alt="${player.username}" class="player-avatar">
+                        <span class="player-name">${player.username} ${player.is_current_user ? '(You)' : ''}</span>
+                    </div>
+                    <div class="player-score">
+                        <div class="score-value">${player.total_points} pts</div>
+                        <div style="font-size: 0.8rem; color: var(--neon-yellow);">🔥 ${player.current_streak} days</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // === UTILITY FUNCTIONS ===
+    function updateDateTime() {
+        const now = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
+    }
+
+    function updateCountdown(timeRemaining = null) {
+        function update() {
+            let hours, minutes, seconds;
+            
+            if (timeRemaining) {
+                hours = timeRemaining.hours;
+                minutes = timeRemaining.minutes;
+                seconds = timeRemaining.seconds;
+                
+                // Decrease time for next update
+                if (--seconds < 0) {
+                    seconds = 59;
+                    if (--minutes < 0) {
+                        minutes = 59;
+                        if (--hours < 0) {
+                            hours = 23;
+                        }
+                    }
+                }
+                
+                timeRemaining = { hours, minutes, seconds };
+            } else {
+                const now = new Date();
+                const tomorrow = new Date(now);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(0, 0, 0, 0);
+                
+                const diff = tomorrow - now;
+                hours = Math.floor(diff / (1000 * 60 * 60));
+                minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            }
+            
+            document.getElementById('timerValue').textContent = 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        update();
+        setInterval(update, 1000);
+    }
+
+    function animateValue(id, start, end, duration) {
+        const element = document.getElementById(id);
+        if (!element) return;
+        
+        const range = end - start;
+        const increment = range / (duration / 16);
+        let current = start;
+        
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= end) {
+                current = end;
+                clearInterval(timer);
+            }
+            
+            element.textContent = Math.floor(current).toLocaleString();
+        }, 16);
+    }
+
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        const options = { month: 'short', day: 'numeric', year: 'numeric' };
+        return date.toLocaleDateString('en-US', options);
+    }
+
+    function showLoading() {
+        document.getElementById('loadingOverlay').classList.add('active');
+    }
+
+    function hideLoading() {
+        document.getElementById('loadingOverlay').classList.remove('active');
+    }
+
+    function showToast(message, type = 'info') {
+        const toastContainer = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        const icons = {
+            success: '✅',
+            error: '❌',
+            info: 'ℹ️'
+        };
+        
+        toast.innerHTML = `
+            <span class="toast-icon">${icons[type]}</span>
+            <span class="toast-message">${message}</span>
+            <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+        `;
+        
+        toastContainer.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 5000);
+    }
+
+    function closeModal() {
+        document.getElementById('quizModal').classList.remove('active');
+    }
+
+    // === ACHIEVEMENT FUNCTIONS ===
+    function unlockAchievement(achievement) {
+        const achievementToast = document.createElement('div');
+        achievementToast.className = 'toast success';
+        achievementToast.style.minWidth = '400px';
+        achievementToast.innerHTML = `
+            <span class="toast-icon">🏆</span>
+            <div style="flex: 1;">
+                <div style="font-weight: bold; color: var(--neon-green);">Achievement Unlocked!</div>
+                <div style="font-size: 0.9rem;">${achievement.icon} ${achievement.name}</div>
+                <div style="font-size: 0.8rem; color: rgba(192, 252, 204, 0.7);">${achievement.description}</div>
+            </div>
+            <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+        `;
+        
+        document.getElementById('toastContainer').appendChild(achievementToast);
+        
+        setTimeout(() => {
+            achievementToast.remove();
+        }, 7000);
+        
+        triggerConfetti();
+    }
+
+    // === CONFETTI EFFECT ===
+    function triggerConfetti() {
+        const colors = ['#00ff88', '#00ffff', '#ffff00', '#ff00c8'];
+        const confettiCount = 50;
+        
+        for (let i = 0; i < confettiCount; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.animationDelay = Math.random() * 0.5 + 's';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            document.body.appendChild(confetti);
+            
+            setTimeout(() => confetti.remove(), 3000);
+        }
+    }
+  </script>
+</body>
+</html>

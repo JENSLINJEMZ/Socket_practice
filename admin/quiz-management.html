@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Management | Sudo Society CTF</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        /* Include your existing styles here */
+        
+        /* Additional styles for quiz management */
+        .management-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--neon-green);
+            font-weight: 600;
+        }
+        
+        .form-input,
+        .form-textarea,
+        .form-select {
+            width: 100%;
+            padding: 0.8rem;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 8px;
+            color: #c0fccc;
+            font-family: 'Share Tech Mono', monospace;
+            transition: all 0.3s ease;
+        }
+        
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--neon-green);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+        
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+                .options-container {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .option-input-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .option-letter {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid var(--neon-green);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--neon-green);
+        }
+        
+        .option-input {
+            flex: 1;
+        }
+        
+        .radio-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+        
+        .radio-label input[type="radio"] {
+            cursor: pointer;
+        }
+        
+        .topics-input {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .topic-tag-input {
+            padding: 0.3rem 0.8rem;
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px solid var(--neon-blue);
+            border-radius: 15px;
+            color: var(--neon-blue);
+            font-size: 0.9rem;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .topic-tag-input:hover {
+            background: rgba(0, 255, 255, 0.2);
+        }
+        
+        .topic-remove {
+            margin-left: 0.5rem;
+            color: var(--danger-red);
+            cursor: pointer;
+        }
+        
+        .calendar-view {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 8px;
+        }
+        
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .calendar-day:hover {
+            background: rgba(0, 255, 136, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .calendar-day.has-quiz {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: var(--neon-green);
+        }
+        
+        .calendar-day.past {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .calendar-day.selected {
+            background: var(--neon-green);
+            color: var(--dark-bg);
+        }
+    </style>
+</head>
+<body>
+    <!-- Include your existing header here -->
+    
+    <div class="management-container">
+        <h1 class="quiz-title">📝 Create New Quiz</h1>
+        
+        <form id="quizForm">
+            <div class="form-group">
+                <label class="form-label">Quiz Date</label>
+                <input type="date" id="quizDate" class="form-input" required>
+                <small style="color: rgba(192, 252, 204, 0.6);">Select the date when this quiz will be available</small>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <select id="category" class="form-select" required>
+                    <option value="">Select a category</option>
+                    <option value="Network Security">Network Security</option>
+                    <option value="Web Security">Web Security</option>
+                    <option value="Cryptography">Cryptography</option>
+                    <option value="Binary Exploitation">Binary Exploitation</option>
+                    <option value="Forensics">Forensics</option>
+                    <option value="Reverse Engineering">Reverse Engineering</option>
+                    <option value="OSINT">OSINT</option>
+                    <option value="Cloud Security">Cloud Security</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Question</label>
+                <textarea id="question" class="form-textarea" required placeholder="Enter the quiz question..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Code Snippet (Optional)</label>
+                <textarea id="codeSnippet" class="form-textarea" placeholder="Enter code snippet if applicable..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Answer Options</label>
+                <div class="options-container">
+                    <div class="option-input-group">
+                        <div class="option-letter">A</div>
+                        <input type="text" class="form-input option-input" data-option="A" placeholder="Option A" required>
+                    </div>
+                    <div class="option-input-group">
+                        <div class="option-letter">B</div>
+                        <input type="text" class="form-input option-input" data-option="B" placeholder="Option B" required>
+                    </div>
+                    <div class="option-input-group">
+                        <div class="option-letter">C</div>
+                        <input type="text" class="form-input option-input" data-option="C" placeholder="Option C" required>
+                    </div>
+                    <div class="option-input-group">
+                        <div class="option-letter">D</div>
+                        <input type="text" class="form-input option-input" data-option="D" placeholder="Option D" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Correct Answer</label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="correctAnswer" value="A" required>
+                        <span>Option A</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="correctAnswer" value="B" required>
+                        <span>Option B</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="correctAnswer" value="C" required>
+                        <span>Option C</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="correctAnswer" value="D" required>
+                        <span>Option D</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Explanation</label>
+                <textarea id="explanation" class="form-textarea" required placeholder="Explain why this is the correct answer..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Hint (Optional)</label>
+                <input type="text" id="hint" class="form-input" placeholder="Provide a hint for users (costs 10 points)">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Difficulty</label>
+                <select id="difficulty" class="form-select" required>
+                    <option value="easy">Easy</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Points</label>
+                <input type="number" id="points" class="form-input" value="50" min="10" max="200" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Topics (Press Enter to add)</label>
+                <input type="text" id="topicInput" class="form-input" placeholder="Add topic and press Enter">
+                <div id="topicsList" class="topics-input"></div>
+            </div>
+            
+            <button type="submit" class="submit-btn" style="width: 100%; margin-top: 2rem;">
+                Create Quiz
+            </button>
+        </form>
+        
+        <div class="calendar-view" id="calendarView">
+            <!-- Calendar will be populated here -->
+        </div>
+    </div>
+    
+    <script>
+        // Quiz management functionality
+        const topics = [];
+        
+        // Set minimum date to today
+        document.getElementById('quizDate').min = new Date().toISOString().split('T')[0];
+        
+        // Topic management
+        document.getElementById('topicInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const topic = this.value.trim();
+                if (topic && !topics.includes(topic)) {
+                    topics.push(topic);
+                    renderTopics();
+                    this.value = '';
+                }
+            }
+        });
+        
+        function renderTopics() {
+            const container = document.getElementById('topicsList');
+            container.innerHTML = topics.map((topic, index) => `
+                <span class="topic-tag-input">
+                    #${topic}
+                    <span class="topic-remove" onclick="removeTopic(${index})">×</span>
+                </span>
+            `).join('');
+        }
+        
+        function removeTopic(index) {
+            topics.splice(index, 1);
+            renderTopics();
+        }
+        
+        // Form submission
+        document.getElementById('quizForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const options = Array.from(document.querySelectorAll('.option-input')).map(input => input.value);
+            
+            const quizData = {
+                date: document.getElementById('quizDate').value,
+                category: document.getElementById('category').value,
+                question: document.getElementById('question').value,
+                code_snippet: document.getElementById('codeSnippet').value || null,
+                options: options,
+                correct_answer: document.querySelector('input[name="correctAnswer"]:checked').value,
+                explanation: document.getElementById('explanation').value,
+                hint: document.getElementById('hint').value || null,
+                difficulty: document.getElementById('difficulty').value,
+                points: parseInt(document.getElementById('points').value),
+                topics: topics
+            };
+            
+            try {
+                showLoading();
+                
+                const response = await fetch('../api/quiz.php?action=create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(quizData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Quiz created successfully!', 'success');
+                    this.reset();
+                    topics.length = 0;
+                    renderTopics();
+                    loadCalendar();
+                } else {
+                    showToast(result.error, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Error creating quiz:', error);
+                showToast('Failed to create quiz', 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+        
+        // Load calendar view
+        async function loadCalendar() {
+            // This would load existing quizzes and show them in a calendar view
+            // Implementation depends on your specific needs
+        }
+        
+        // Initialize
+        loadCalendar();
+        
+        // Include your existing utility functions (showLoading, hideLoading, showToast)
+    </script>
+</body>
+</html>
