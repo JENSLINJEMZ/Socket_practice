@@ -12,6 +12,9 @@ print(f"[*] Server listening on {host}:{port}")
 print(f"[*] Waiting for connections...")
 
 client_soc , address = server_soc.accept()
-
-print(f"[*] Client adress: {address[0]}")
-print(f"[*] Client port: {address[1]}")
+client_soc.send('Hello'.encode())
+# while True:
+data = client_soc.recv(1024).decode()
+print("Client: ",data)
+client_soc.close()
+server_soc.close()
