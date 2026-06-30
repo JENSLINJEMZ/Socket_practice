@@ -17,7 +17,7 @@ while True:
     data = client_soc.recv(1024).decode()
     print("Client: ",data)
     message = input("Enter message: ")
-    if data  == "quit":
+    if not data or message  == "quit":
         client_soc.send("Bye client!".encode())
         client_soc.close()
         break

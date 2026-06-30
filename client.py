@@ -13,7 +13,7 @@ while True:
     data = client.recv(1024).decode()
     print("server",data)
     message = input("Enter message: ")
-    if data  == "quit":
+    if not data or message  == "quit":
         client.send(message.encode())
         client.close()
         break
