@@ -7,8 +7,15 @@ client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 client.connect((ip,port))
 
-client.send("hello server".encode())
 
-data = client.recv(1024).decode()
-print("server",data)
-client.close()
+
+while True:
+    data = client.recv(1024).decode()
+    print("server",data)
+    message = input("Enter message: ")
+    if data  == "quit":
+        client.send(message.encode())
+        client.close()
+        break
+    else:
+        client.send(message.encode())

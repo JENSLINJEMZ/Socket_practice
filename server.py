@@ -12,9 +12,15 @@ print(f"[*] Server listening on {host}:{port}")
 print(f"[*] Waiting for connections...")
 
 client_soc , address = server_soc.accept()
-client_soc.send('Hello'.encode())
-# while True:
-data = client_soc.recv(1024).decode()
-print("Client: ",data)
-client_soc.close()
-server_soc.close()
+client_soc.send('Hello Client'.encode())
+while True:
+    data = client_soc.recv(1024).decode()
+    print("Client: ",data)
+    message = input("Enter message: ")
+    if data  == "quit":
+        client_soc.send("Bye client!".encode())
+        client_soc.close()
+        break
+    else:
+        client_soc.send(message.encode())
+    
