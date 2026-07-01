@@ -26,13 +26,6 @@ def server():
                     client_soc.send("Bye client!".encode())
                     client_soc.close()
                     break
-                message = input("Enter message: ")
-                if message.lower() == "quit":
-                    client_soc.send("Bye client!".encode())
-                    client_soc.close()
-                    break
-                
-                client_soc.send(message.encode())
     except Exception as error:
         print(error)
 
