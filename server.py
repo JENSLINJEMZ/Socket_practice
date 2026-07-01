@@ -1,5 +1,6 @@
 import socket
 import threading
+import os 
 server_soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 host = "0.0.0.0"
@@ -40,6 +41,7 @@ def server():
                             print(f"Clients count:{connected_clients}")
                             client_soc.close()
                             server_soc.close()
+                            os._exit(0)
                             return
                         else:
                             print(f"{address[0]} disconnected.")
