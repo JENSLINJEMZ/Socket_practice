@@ -17,7 +17,7 @@ def server():
             client_soc.send('Hello Client'.encode())
             while True:
                 data = client_soc.recv(1024).decode()
-                print("Client: ",data)
+                print(f"Client {address[0]}:{address[1]}: ",data)
                 if not data:
                     print("client not responding...")
                     client_soc.close()
